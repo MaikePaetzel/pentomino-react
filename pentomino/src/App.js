@@ -7,7 +7,7 @@ import React, {useRef, useEffect, useState} from 'react'
 import {Shape} from "./pento-objects/PentoShape";
 import {pento_create_shape, pento_I} from "./pento-objects/HelperPentoShapes";
 import {draw_shape, draw_shape_border} from "./pento-objects/HelperDrawingBlocks";
-import {PentoBoard_old} from "./pento-objects/PentoBoard_old";
+import {PentoBoard} from "./pento-objects/PentoBoard";
 import {PentoConfig} from "./config";
 import {grid_cell_to_coordinates} from "./pento-objects/HelperDrawingBoard";
 import {generateElephantShape} from "./pento-objects/HelperDrawComplexShapes";
@@ -26,14 +26,24 @@ function App() {
     const [initialShapes, setInitialShapes] = useState([]);
     const [placedShapes, setPlacedShapes] = useState([]);
 
-    const [activeShape, setActiveShape] = useState(null)
+    const [activeShape, setActiveShape] = useState([])
 
-    //TODO: Add onClick listener to setActiveShapeCorrectly
     const renderButtons = () => {
         return initialShapes.map(element => {
-            return <button> {pento_config.get_color_name(element.color)} {element.type} </button>
+            return <button id={"pento_"+element.type} onClick={() => {selectPentoPiece(element.name)}}> {pento_config.get_color_name(element.color)} {element.type} </button>
         })
     }
+
+    //TODO: highlight in einigen Pento-Shapes markiert mehr als nur das aktive Teil?
+    const selectPentoPiece = (pento_name) => {
+        if(activeShape.length > 0 && activeShape[0].name == pento_name) {
+            setActiveShape([])
+        }
+        else {
+            console.log(pento_name);
+            setActiveShape(initialShapes.filter(item => item.name == pento_name));
+        }
+    };
 
     const startGame = () => {
 
@@ -41,36 +51,48 @@ function App() {
         //TODO: The validation whether blocks are outside the board does not work either, parts of them are sticking out
         //TODO: Flip action doesn't work, breaks with indexing error
 
-        setInitialShapes(generateElephantShape("elephant", pento_config, {"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size , "x": grid_x, "y": grid_y}))
+        setPlacedShapes([])
+        setInitialShapes(generateElephantShape("elephant", pento_config, {"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size , "x": grid_x, "y": grid_y}));
+        console.log(initialShapes)
     };
 
     const placeSelected = () => {
-        //TODO: get the currently selected shape from the initialShapes list and add to the placedShapes
-        //TODO: update the position so it is placed correctly
-    }
+        if (activeShape.length > 0) {
+            let selected_shape = activeShape[0].name;
+            let to_replace = null;
+            initialShapes.forEach(el => {
+                if (el.name == selected_shape) {
+                    to_replace = el
+                }
+            })
+            setPlacedShapes(placedShapes.concat(to_replace));
+            setInitialShapes(initialShapes.filter(item => item.name !== to_replace.name));
+            setActiveShape([])
+        }
+    };
 
 
-    //TODO: Correct placement and positions of the two boards, take the general styling from Karla's UI
     //TODO: Count down game time
   return (
     <div className="App">
         <div className="twelve columns">
-            <h5>Pentomino Board</h5>
-            <button id="startBtn" onClick={startGame} >Start new game</button>
-            <button id="placeBtn" onClick={placeSelected}>Place selected</button>
+            <h5>Pentomino Spiel</h5>
+            <button id="startBtn" style={{marginRight: 50}} onClick={() => {startGame()}} >Start new game</button>
+            <button id="placeBtn" onClick={() => {placeSelected()}}>Place selected</button>
             <hr/>
         </div>
         <div className="row">
             <div className="six columns">
-              <PentoBoard_old shapes = {initialShapes}
-                              grid_properties={{"title": "Initial", "with_grid": true, "with_tray": true, "x": grid_x, "y": grid_y}}
-                              config={{"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
+              <PentoBoard shapes = {initialShapes}
+                          activeShape = {activeShape[0]}
+                          grid_properties={{"title": "Initial", "with_grid": true, "with_tray": true, "x": grid_x, "y": grid_y}}
+                          config={{"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
               />
             </div>
             <div className="six columns">
-                <PentoBoard_old shapes = {placedShapes}
-                                grid_properties={{"title": "Elephant", "with_grid": true, "with_tray": true, "x": grid_x, "y": grid_y}}
-                                config={{"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
+                <PentoBoard shapes = {placedShapes}
+                            grid_properties={{"title": "Elephant", "with_grid": true, "with_tray": true, "x": grid_x, "y": grid_y}}
+                            config={{"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
                 />
             </div>
         </div>

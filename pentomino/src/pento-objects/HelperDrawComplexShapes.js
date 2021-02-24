@@ -35,10 +35,6 @@ const configPerShape = (shape, n_blocks) => {
  * This generates all shapes that are required to fill the elephant
  */
 export const generateElephantShape = (shape, pento_config, grid_config) => {
-    // All shapes are used once to create the elephant
-    // remove all previously generated shapes
-    //this.pento_board_elephant.destroy_all_shapes();
-    //this.pento_board_initial.destroy_all_shapes();
 
     // set value ranges for random selection
     const columns =			[...Array(grid_config.n_blocks).keys()];
@@ -61,20 +57,15 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
         let eleY = shape_config["y"] + shape_config["coords"][pento_types[id]]['y'];
         let coords = grid_cell_to_coordinates(eleX, eleY,grid_config.block_size);
 
-        console.log({"id":id, "x": coords[0], "y": coords[1], "type": pento_types[id], "color": rand_color})
+        //console.log({"id":id, "x": coords[0], "y": coords[1], "type": pento_types[id], "color": rand_color})
         // create shape for the elephant board: without flip or rotation
         let new_shape = pento_create_shape(id, coords[0], coords[1], pento_types[id], rand_color, false, 0, grid_config.block_size);
-        //this.pento_board_elephant.place_shape(new_shape);
         generated_shapes.push(new_shape.copy(id));
     }
 
-    // draw elphant board
-    //this.pento_board_elephant.draw();
-
-    // now move, rotate, flip shape randomly to create initial board
+    // now move, rotate, flip shape randomly to create initial board TODO: einkommentieren!
     //TODO: flip is not implemented yet (and breaks when trying to call it)
     //create_initial_state(generated_shapes, ['rotate', 'move'], grid_config);
-    //this.pento_board_initial.draw();
 
     return generated_shapes
 };
@@ -114,7 +105,7 @@ const create_initial_state = (shapes, actions, grid_config) => {
                         ++attempts;
                     }
                     // emit warning if invalid parameters where used
-                    if (attempts >= 40) {
+                    if (attempts >= 20) {
                         console.log(`No valid parameters were found for shape ${shape.name} and action ${action} during ${attempts} iterations. Result may contain overlaps.`);
                         continue;
                     }

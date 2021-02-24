@@ -2,13 +2,14 @@ import React, {Component, useEffect, useRef} from "react";
 import {pento_create_shape} from "./HelperPentoShapes";
 import {draw_shape, draw_shape_border} from "./HelperDrawingBlocks";
 
-export const PentoBoard_old = ({grid_properties, shapes, config}) => {
+export const PentoBoard = ({grid_properties, shapes, config, activeShape}) => {
 
     const canvasRef = useRef(null)
 
     const title = grid_properties?.title || "test";
     const pento_config = config;
     const pento_shapes = shapes;
+    const active_shape = activeShape
 
     // board size and grid parameters
     const pento_grid_cols	= config.n_blocks;
@@ -34,19 +35,19 @@ export const PentoBoard_old = ({grid_properties, shapes, config}) => {
     const _actions = ['move', 'rotate', 'connect', 'flip'];
 
     const draw = ctx => {
-        //const b = new Block(1,1,10,10,'red')
-        //draw_block(ctx,b,0,100,true)
-        //const b2 = new Block(1,1,10,10,'red')
-        //draw_block(ctx,b2,11,100,true)
-        //const s = pento_create_shape(1, 10, 10, 'W', 'blue', false, 180, 10)
-        //const s = new Shape(1,'I','red',true,90,10)
-        //pento_I(s)
-        //TODO: shape visible???
         pento_shapes.forEach((s) => {
             console.log(s)
+            if (active_shape != null && s.name == active_shape.name)
+            {
+                s.set_highlight("red")
+            }
+            else {
+                s.remove_highlight()
+            }
             draw_shape(ctx,s,{offsetX: 0, offsetY: 0})
             draw_shape_border(ctx,s,{offsetX: 0, offsetY: 0})
         })
+
 
     };
 
@@ -154,7 +155,7 @@ export const PentoBoard_old = ({grid_properties, shapes, config}) => {
         init_board(canvas, context)
         init_grid(context)
         draw(context)
-    }, [shapes])
+    }, [shapes, activeShape])
 
     return <canvas ref={canvasRef} />
 }
