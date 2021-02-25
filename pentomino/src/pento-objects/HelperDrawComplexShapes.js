@@ -65,7 +65,7 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
 
     // now move, rotate, flip shape randomly to create initial board TODO: einkommentieren!
     //TODO: flip is not implemented yet (and breaks when trying to call it)
-    //create_initial_state(generated_shapes, ['rotate', 'move'], grid_config);
+    create_initial_state(generated_shapes, ['rotate', 'move', 'flip'], grid_config);
 
     return generated_shapes
 };
@@ -98,7 +98,7 @@ const create_initial_state = (shapes, actions, grid_config) => {
                     let params = generate_params(shape, action, grid_config);
                     execute_action(action, shape, params);
                     let attempts = 0; // assure loop termination if action is impossible due to board size
-                    while (!isValidAction(action, shape, shapes, params) && attempts < 20) {
+                    while (!isValidAction(action, shape, shapes, grid_config) && attempts < 20) {
                         shape.rollback(1);
                         params = generate_params(shape, action, grid_config);
                         execute_action(action, shape, params);
@@ -220,7 +220,7 @@ const has_collisions = (shape, pento_shapes) => {
  * Returns a list of shapes colliding with shape
  * @param {shape to check for} shape
  */
-const get_collisions  = (shape, pento_shapes) => {
+const get_collisions = (shape, pento_shapes) => {
     let hits = [];
     for (let key in pento_shapes) {
         let other_shape = pento_shapes[key];

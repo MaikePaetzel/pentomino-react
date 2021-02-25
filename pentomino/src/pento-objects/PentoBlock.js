@@ -221,7 +221,6 @@ export class Block {
      * @param {true to log the action to the changes array} track
      */
     rotateByRearrange(delta_angle, new_angle) {
-        console.log(delta_angle)
         if (delta_angle == 90 || delta_angle == -270) {
             // new x is (-1) * old y; new y is old x
             this._move((-1) * this.y - this.x, this.x - this.y);

@@ -14,7 +14,7 @@ export class Shape {
         this.highlight = false;
 
         // shape internal grid and bounding box
-        this._internal_grid_size = [6, 6];
+        this._internal_grid_size = [5, 5];
         this._internal_grid_shifts = [2, 2];
         this._internal_grid = [];
         this._init_grid();
@@ -272,8 +272,8 @@ export class Shape {
      * @param {value for cell} value
      */
     _set_grid_value(row, col, value) {
-        console.log(this._internal_grid)
-        console.log(row)
+        //console.log(this._internal_grid)
+        //console.log(row)
         this._internal_grid[row][col] = value;
     }
 

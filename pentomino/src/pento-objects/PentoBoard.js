@@ -36,18 +36,18 @@ export const PentoBoard = ({grid_properties, shapes, config, activeShape}) => {
 
     const draw = ctx => {
         pento_shapes.forEach((s) => {
-            console.log(s)
-            if (active_shape != null && s.name == active_shape.name)
-            {
-                s.set_highlight("red")
-            }
-            else {
+            if (active_shape == null || s.name != active_shape.name) {
                 s.remove_highlight()
+                draw_shape(ctx,s,{offsetX: 0, offsetY: 0})
+                draw_shape_border(ctx,s,{offsetX: 0, offsetY: 0})
             }
-            draw_shape(ctx,s,{offsetX: 0, offsetY: 0})
-            draw_shape_border(ctx,s,{offsetX: 0, offsetY: 0})
         })
-
+        // make sure to draw active shape last
+        if (active_shape!= null) {
+            active_shape.set_highlight("red");
+            draw_shape(ctx, active_shape, {offsetX: 0, offsetY: 0});
+            draw_shape_border(ctx, active_shape, {offsetX: 0, offsetY: 0});
+        }
 
     };
 

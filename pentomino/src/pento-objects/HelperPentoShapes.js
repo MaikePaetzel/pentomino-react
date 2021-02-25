@@ -14,19 +14,17 @@ const pento_create_block = (x, y, block_size, color) => {
 };
 
 // draw F 
-const pento_F = (shape) => {
-    // Draw block
-
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, + i * shape.block_size, shape.block_size, shape.color);
-        shape.add_block(block);
+const pento_F = (shape) =>  {
+    // Draw blocks
+    for (var y = -1; y < 2; y++) {
+        shape.add_block(pento_create_block(0, + y * shape.block_size, shape.block_size, shape.color));
     }
 
     if (shape.is_mirrored) {
-        shape.add_block(pento_create_block(shape.block_size, + shape.block_size, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(shape.block_size, - shape.block_size, shape.block_size, shape.color));
         shape.add_block(pento_create_block(- shape.block_size, 0, shape.block_size, shape.color));
     } else {
-        shape.add_block(pento_create_block(- shape.block_size, + shape.block_size, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(- shape.block_size, - shape.block_size, shape.block_size, shape.color));
         shape.add_block(pento_create_block(shape.block_size, 0, shape.block_size, shape.color));
     }
 };
@@ -34,8 +32,8 @@ const pento_F = (shape) => {
 // Draw I
 const pento_I = (shape) => {
     // Draw blocks
-    for (var i = 0; i < 4; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    for (var y = -2; y < 3; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 };
@@ -43,15 +41,15 @@ const pento_I = (shape) => {
 // Draw L
 const pento_L = (shape) => {
     // Draw blocks
-    for (var i = 0; i < 4; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    for (var y = -2; y < 2; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
     if (shape.is_mirrored) {
-        var block = pento_create_block(shape.block_size, 3 * shape.block_size, shape.block_size, shape.color);
+        var block = pento_create_block(shape.block_size, 1 * shape.block_size, shape.block_size, shape.color);
     } else {
-        var block = pento_create_block(- shape.block_size, 3 * shape.block_size, shape.block_size, shape.color);
+        var block = pento_create_block(- shape.block_size, 1 * shape.block_size, shape.block_size, shape.color);
     }
     shape.add_block(block);
 };
@@ -60,16 +58,16 @@ const pento_L = (shape) => {
 const pento_N = (shape) => {
 
     // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, + i * shape.block_size, shape.block_size, shape.color);
+    for (var y = -1; y < 2; y++) {
+        var block = pento_create_block(0, + y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    for (var i = 2; i < 4; i++) {
+    for (var y = -2; y < 0; y++) {
         if (shape.is_mirrored) {
-            var block = pento_create_block(shape.block_size, + i * shape.block_size, shape.block_size, shape.color);
+            var block = pento_create_block(- shape.block_size, + y * shape.block_size, shape.block_size, shape.color);
         } else {
-            var block = pento_create_block(shape.block_size, + i * shape.block_size, shape.block_size, shape.color);
+            var block = pento_create_block(+ shape.block_size, + y * shape.block_size, shape.block_size, shape.color);
         }
         shape.add_block(block);
     }
@@ -79,16 +77,16 @@ const pento_N = (shape) => {
 const pento_P = (shape) => {
 
     // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    for (var y = -1; y < 2; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    for (var i = 0; i < 2; i++) {
+    for (var y = 0; y < 2; y++) {
         if (shape.is_mirrored) {
-            var block = pento_create_block(shape.block_size, + i * shape.block_size, shape.block_size, shape.color);
+            var block = pento_create_block(shape.block_size, + y * shape.block_size, shape.block_size, shape.color);
         } else {
-            var block = pento_create_block(- shape.block_size, + i * shape.block_size, shape.block_size, shape.color);
+            var block = pento_create_block(- shape.block_size, + y * shape.block_size, shape.block_size, shape.color);
         }
         shape.add_block(block);
     }
@@ -96,41 +94,41 @@ const pento_P = (shape) => {
 
 // Draw T
 const pento_T = (shape) => {
-    // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, + i * shape.block_size, shape.block_size, shape.color);
+    // Draw blocks (no mirrored version here)
+    for (var x = -1; x < 2; x++) {
+        var block = pento_create_block(+ x * shape.block_size, 0, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    shape.add_block(pento_create_block(- shape.block_size, 0, shape.block_size, shape.color));
-    shape.add_block(pento_create_block(shape.block_size, 0, shape.block_size, shape.color));
+    shape.add_block(pento_create_block(shape.block_size, - shape.block_size, shape.block_size, shape.color));
+    shape.add_block(pento_create_block(shape.block_size, + shape.block_size, shape.block_size, shape.color));
 };
 
 // draw U
 const pento_U = (shape) => {
-    // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(i * shape.block_size, + shape.block_size, shape.block_size, shape.color);
+    // Draw blocks (no mirrored version here)
+    for (var y = -1; y < 2; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    var block = pento_create_block(0, 0, shape.block_size, shape.color);
+    var block = pento_create_block(shape.block_size, - shape.block_size, shape.block_size, shape.color);
     shape.add_block(block);
 
-    var block = pento_create_block(2 * shape.block_size, 0, shape.block_size, shape.color);
+    var block = pento_create_block(shape.block_size, shape.block_size, shape.block_size, shape.color);
     shape.add_block(block);
 };
 
 // draw V
 const pento_V = (shape) => {
-    // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(i * shape.block_size, 2 * shape.block_size, shape.block_size, shape.color);
+    // Draw blocks (no mirrored version here)
+    for (var y = -1; y < 2; y++) {
+        var block = pento_create_block(- shape.block_size, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    for (var i = 0; i < 2; i++) {
-        var block = pento_create_block(2 * shape.block_size, i * shape.block_size, shape.block_size, shape.color);
+    for (var x = 0; x < 2; x++) {
+        var block = pento_create_block(x * shape.block_size, - shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 };
@@ -138,45 +136,45 @@ const pento_V = (shape) => {
 // draw W
 const pento_W = (shape) => {
 
-    // Draw blocks
-    for (var i = 0; i < 2; i++) {
-        var block = pento_create_block(i * shape.block_size, 2 * shape.block_size, shape.block_size, shape.color);
+    // Draw blocks (no mirrored version here)
+    for (var y = -1; y < 1; y++) {
+        var block = pento_create_block(- shape.block_size, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    for (var i = 1; i < 3; i++) {
-        var block = pento_create_block(i * shape.block_size, 1 * shape.block_size, shape.block_size, shape.color);
+    for (var y = 0; y < 2; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    var block = pento_create_block(2 * shape.block_size, 0, shape.block_size, shape.color);
+    var block = pento_create_block(shape.block_size, shape.block_size, shape.block_size, shape.color);
     shape.add_block(block);
 };
 
 // Draw X
 const pento_X = (shape) => {
-    // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    // Draw blocks (no mirrored version here)
+    for (var y = -1; y < 2; y++) {
+        var block = pento_create_block(0, y * shape.block_size, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
-    shape.add_block(pento_create_block(- shape.block_size, shape.block_size, shape.block_size, shape.color));
-    shape.add_block(pento_create_block(shape.block_size, shape.block_size, shape.block_size, shape.color));
+    shape.add_block(pento_create_block(- shape.block_size, 0, shape.block_size, shape.color));
+    shape.add_block(pento_create_block(shape.block_size, 0, shape.block_size, shape.color));
 };
 
 // Draw Y
 const pento_Y = (shape) => {
     // Draw blocks
-    for (var i = 0; i < 4; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    for (var x = -2; x < 2; x++) {
+        var block = pento_create_block(x * shape.block_size, 0, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
     if (shape.is_mirrored) {
-        var block = pento_create_block(shape.block_size, shape.block_size, shape.block_size, shape.color);
+        var block = pento_create_block(0, - shape.block_size, shape.block_size, shape.color);
     } else {
-        var block = pento_create_block(- shape.block_size, shape.block_size, shape.block_size, shape.color);
+        var block = pento_create_block(0, + shape.block_size, shape.block_size, shape.color);
     }
     shape.add_block(block);
 };
@@ -184,20 +182,21 @@ const pento_Y = (shape) => {
 // draw Z
 const pento_Z = (shape) => {
     // Draw blocks
-    for (var i = 0; i < 3; i++) {
-        var block = pento_create_block(0, i * shape.block_size, shape.block_size, shape.color);
+    for (var x = -1; x < 2; x++) {
+        var block = pento_create_block(x * shape.block_size, 0, shape.block_size, shape.color);
         shape.add_block(block);
     }
 
     if (shape.is_mirrored) {
-        shape.add_block(pento_create_block(shape.block_size, 2 * shape.block_size, shape.block_size, shape.color));
-        shape.add_block(pento_create_block(-shape.block_size, 0, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(- shape.block_size, - shape.block_size, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(shape.block_size, shape.block_size, shape.block_size, shape.color));
     } else {
-        shape.add_block(pento_create_block(shape.block_size, 0, shape.block_size, shape.color));
-        shape.add_block(pento_create_block(- shape.block_size, 2 * shape.block_size, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(- shape.block_size, shape.block_size, shape.block_size, shape.color));
+        shape.add_block(pento_create_block(shape.block_size, -  shape.block_size, shape.block_size, shape.color));
     }
 
 };
+
 
 const _new_pento_shape = (id, type, color, is_mirrored, rotation, block_size) => {
     return new Shape(id, type, color, is_mirrored, rotation == null ? 0 : rotation, block_size)
