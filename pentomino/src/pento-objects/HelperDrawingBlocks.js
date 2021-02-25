@@ -54,6 +54,8 @@ export const draw_block = (ctx, block, offsetX, offsetY, active, highlight=null)
     } else if (highlight) {
         ctx.shadowColor = highlight;
         ctx.shadowBlur = 10;
+    } else {
+        ctx.shadowBlur = 0; // set highlight invisible
     }
     ctx.fillStyle = block.color;
     ctx.strokeStyle = 'lightgray';
