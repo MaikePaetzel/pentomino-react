@@ -10,7 +10,7 @@ import {draw_shape, draw_shape_border} from "./pento-objects/HelperDrawingBlocks
 import {PentoBoard} from "./pento-objects/PentoBoard";
 import {PentoConfig} from "./config";
 import {grid_cell_to_coordinates} from "./pento-objects/HelperDrawingBoard";
-import {generateElephantShape} from "./pento-objects/HelperDrawComplexShapes";
+import {createNewPentoPieceInShape, generateElephantShape} from "./pento-objects/HelperDrawComplexShapes";
 
 
 function App() {
@@ -22,6 +22,8 @@ function App() {
     const block_size = pento_config.block_size;
     const grid_x = 0;
     const grid_y = 0;
+
+    const grid_config = {"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size , "x": grid_x, "y": grid_y}
 
     const [initialShapes, setInitialShapes] = useState([]);
     const [placedShapes, setPlacedShapes] = useState([]);
@@ -46,14 +48,12 @@ function App() {
 
     const startGame = () => {
 
-        //TODO: The validation whether blocks are outside the board does not work either, parts of them are sticking out
         setPlacedShapes([]);
         setActiveShape([]);
-        setInitialShapes(generateElephantShape("elephant", pento_config, {"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size , "x": grid_x, "y": grid_y}));
+        setInitialShapes(generateElephantShape("elephant", pento_config, grid_config));
         console.log(initialShapes)
     };
 
-    //TODO: Hier muss die Position der Steine wieder verändert werden, so dass sie auch als Teil des Elefanten rechts eingefügt werden
     const placeSelected = () => {
         if (activeShape.length > 0) {
             let selected_shape = activeShape[0].name;
@@ -62,8 +62,12 @@ function App() {
                 if (el.name == selected_shape) {
                     to_replace = el
                 }
-            })
-            setPlacedShapes(placedShapes.concat(to_replace));
+            });
+
+            let new_shape = createNewPentoPieceInShape("elephant", pento_config, grid_config, to_replace.type, to_replace.color, to_replace.id);
+
+
+            setPlacedShapes(placedShapes.concat(new_shape));
             setInitialShapes(initialShapes.filter(item => item.name !== to_replace.name));
             setActiveShape([])
         }

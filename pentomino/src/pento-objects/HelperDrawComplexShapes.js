@@ -52,14 +52,11 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
     for (let id=0; id<pento_types.length; id++) {
         let rand_color = colors[Math.floor(Math.random() * colors.length)];
 
-        // place on elephant board (predefined position)
-        let eleX = shape_config["x"] + shape_config["coords"][pento_types[id]]['x'];
-        let eleY = shape_config["y"] + shape_config["coords"][pento_types[id]]['y'];
-        let coords = grid_cell_to_coordinates(eleX, eleY,grid_config.block_size);
+        const pento_types =		pento_config.get_pento_types();
+        let pento_piece = pento_types[id]
 
-        //console.log({"id":id, "x": coords[0], "y": coords[1], "type": pento_types[id], "color": rand_color})
-        // create shape for the elephant board: without flip or rotation
-        let new_shape = pento_create_shape(id, coords[0], coords[1], pento_types[id], rand_color, false, 0, grid_config.block_size);
+
+        let new_shape = createNewPentoPieceInShape(shape, pento_config, grid_config, pento_piece, rand_color, id);
         generated_shapes.push(new_shape.copy(id));
     }
 
@@ -68,6 +65,22 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
 
     return generated_shapes
 };
+
+export const createNewPentoPieceInShape = (shape, pento_config, grid_config, pento_piece, color, id) => {
+    const shape_config = configPerShape(shape, grid_config.n_blocks)
+
+    console.log("Pento Piece " + pento_piece);
+    // place on elephant board (predefined position)
+    let eleX = shape_config["x"] + shape_config["coords"][pento_piece]['x'];
+    let eleY = shape_config["y"] + shape_config["coords"][pento_piece]['y'];
+    let coords = grid_cell_to_coordinates(eleX, eleY,grid_config.block_size);
+
+    //console.log({"id":id, "x": coords[0], "y": coords[1], "type": pento_types[id], "color": rand_color})
+    // create shape for the elephant board: without flip or rotation
+    let new_shape = pento_create_shape(id, coords[0], coords[1], pento_piece, color, false, 0, grid_config.block_size);
+
+    return new_shape.copy(id)
+}
 
 /**
  * Create initial state by manipulating the target state by n actions
@@ -97,14 +110,14 @@ const create_initial_state = (shapes, actions, grid_config) => {
                     let params = generate_params(shape, action, grid_config);
                     execute_action(action, shape, params);
                     let attempts = 0; // assure loop termination if action is impossible due to board size
-                    while (!isValidAction(action, shape, shapes, grid_config) && attempts < 20) {
+                    while (!isValidAction(action, shape, shapes, grid_config) && attempts < 40) {
                         shape.rollback(1);
                         params = generate_params(shape, action, grid_config);
                         execute_action(action, shape, params);
                         ++attempts;
                     }
                     // emit warning if invalid parameters where used
-                    if (attempts >= 20) {
+                    if (attempts >= 40) {
                         console.log(`No valid parameters were found for shape ${shape.name} and action ${action} during ${attempts} iterations. Result may contain overlaps.`);
                         continue;
                     }
