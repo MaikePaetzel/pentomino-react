@@ -34,7 +34,6 @@ function App() {
         })
     }
 
-    //TODO: highlight in einigen Pento-Shapes markiert mehr als nur das aktive Teil?
     const selectPentoPiece = (pento_name) => {
         if(activeShape.length > 0 && activeShape[0].name == pento_name) {
             setActiveShape([])
@@ -47,15 +46,14 @@ function App() {
 
     const startGame = () => {
 
-        //TODO: The validation whether blocks collide doesn't work - they are frequently placed on top and right next to each other
         //TODO: The validation whether blocks are outside the board does not work either, parts of them are sticking out
-        //TODO: Flip action doesn't work, breaks with indexing error
-
-        setPlacedShapes([])
+        setPlacedShapes([]);
+        setActiveShape([]);
         setInitialShapes(generateElephantShape("elephant", pento_config, {"n_blocks": n_blocks, "board_size": board_size, "block_size": block_size , "x": grid_x, "y": grid_y}));
         console.log(initialShapes)
     };
 
+    //TODO: Hier muss die Position der Steine wieder verändert werden, so dass sie auch als Teil des Elefanten rechts eingefügt werden
     const placeSelected = () => {
         if (activeShape.length > 0) {
             let selected_shape = activeShape[0].name;

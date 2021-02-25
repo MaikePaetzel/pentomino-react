@@ -63,8 +63,7 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
         generated_shapes.push(new_shape.copy(id));
     }
 
-    // now move, rotate, flip shape randomly to create initial board TODO: einkommentieren!
-    //TODO: flip is not implemented yet (and breaks when trying to call it)
+    // now move, rotate, flip shape randomly to create initial board
     create_initial_state(generated_shapes, ['rotate', 'move', 'flip'], grid_config);
 
     return generated_shapes
