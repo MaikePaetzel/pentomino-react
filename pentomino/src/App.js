@@ -20,6 +20,7 @@ const App = () => {
   const grid_x = 0;
   const grid_y = 0;
 
+  // Diese Variable setzt, wie lang das Game im Webinterface dauert (in Sekunden)
   const game_time = 600;
 
   const grid_config = {
@@ -29,6 +30,8 @@ const App = () => {
     "x": grid_x,
     "y": grid_y
   }
+
+  // Der initiale GameState
   const initialState = {
     "left_board": [],
     "right_board": [],
@@ -37,21 +40,31 @@ const App = () => {
       "startTime": undefined,
       "time": game_time,
     },
-    "selected": ""
+    "selected": "None"
   }
 
 
+  // Dient dazu, den Intervall-Handler für die Spielzeit nach Ablauf der Spielzeit wieder zu zerstören
+  // (ansonsten würde die Spielzeit negativ werden)
   const gameTimeHandler = useRef();
 
+  // Die Pentomino-Steine auf dem linken Board
+  const [initialShapes, setInitialShapes] = useState([])
 
-  const [initialShapes, setInitialShapes] = useState([]);
+  // Die Pentomino-Steine auf dem rechten Board
   const [placedShapes, setPlacedShapes] = useState([]);
 
+  // Die momentan ausgewählten Pento-Steine
   const [activeShape, setActiveShape] = useState([]);
 
+  // Speichert, ob die Web-UI mit dem Roboter verbunden ist
   const [initialized, setInitialized] = useState(false)
 
+  // Speichert, ob die Web-UI auf alle Events des Roboters hört
+  const [eventsInitialized, setEventsInitialized] = useState(false)
 
+
+  //Hält den momentanen GameState und sorgt dafür, dass Änderungen korrekt umgesetzt werden
   const [gameState, dispatch] = useReducer((state, action) => {
     switch (action.type) {
       case 'gameStart':
@@ -68,11 +81,11 @@ const App = () => {
           ...state,
           selected: action.piece.name
         };
-      };
+      }
       case 'deselectPiece': {
         return {
           ...state,
-          selected: ""
+          selected: "None"
         };
       }
       case 'addToRightBoard':
@@ -125,6 +138,9 @@ const App = () => {
   }, initialState);
 
 
+  /**
+   * Rendert die Buttons unter dem Game-Board, mit denen zu Testzwecken einzelne Teile ausgewählt werden können.
+   */
   const renderButtons = () => {
     return initialShapes.map(element => {
       return <button id={"pento_" + element.type} onClick={() => {
@@ -134,31 +150,35 @@ const App = () => {
   };
 
   /**
-   * This method is called when the respective button for a pento piece is pressed, or when
-   * the "pick" event is received over the interface.
+   * Diese Methode wird aufgerufen, wenn ein Pentomino-Stein ausgewählt wird (entweder durch Button-klick oder durch
+   * ein Event vom Roboter.
+   *
+   * @param pento_name Der Name des Pentomino-Teils als String
    */
   const selectPentoPiece = (pento_name) => {
     if (activeShape.length > 0 && activeShape[0].name == pento_name) {
       setActiveShape([])
     } else {
-      setActiveShape(initialShapes.filter(item => item.name == pento_name));
+      setActiveShape(initialShapes.filter(item => item.name == pento_name.toString()));
     }
   };
 
   /**
-   * This method is called when the "Deselect" button is pressed, or when
-   * the "deselect" event is received over the interface.
+   * Diese Methode sorgt dafür, dass alle momentan ausgewählten Spielsteine nicht mehr ausgewählt sind
+   * Wird entweder durch Button-Klick oder Event vom Roboter aufgerufen.
    */
   const deselect = () => {
     setActiveShape([])
   };
 
   /**
-   * This method is called when the "Start Game" button is pressed, or when
-   * the "start_game" event is received over the interface.
+   * Diese Methode wird aufgerufen, um das Spiel zu starten (entweder durch Button-klick oder durch Event vom Roboter)
    */
   const startGame = () => {
+    // Alle aktuellen Spielsteine auf dem rechten Board löschen
     setPlacedShapes([]);
+
+    // ALle aktuell ausgewählten Spielsteine löschen
     setActiveShape([]);
     setInitialShapes(generateElephantShape("elephant", pento_config, grid_config));
 
@@ -166,8 +186,8 @@ const App = () => {
   };
 
   /**
-   * This method is called when the "Place selected" button is pressed, or when
-   * the "place_selected" event is received over the interface.
+   * Diese Methode plaziert einen Spielstein an der richtigen Position auf dem rechten Spielbrett.
+   * Wird entweder durch Button-Klick oder Event vom Roboter aufgerufen.
    */
   const placeSelected = () => {
     if (activeShape.length > 0) {
@@ -187,28 +207,44 @@ const App = () => {
 
       setPlacedShapes(placedShapes.concat(new_shape));
       setInitialShapes(initialShapes.filter(item => item.name !== to_replace.name));
+
+      //Kein Spielstein ist ausgewählt nachdem gerade ein Spielstein plaziert wurde
       setActiveShape([])
     }
   };
 
+  /**
+   * Hilfsmethode, um einen Pentomino-Stein als JSON zu speichern
+   * @param name Name des Pentimon-Steins
+   * @param type Typ des Pentomino-Steins
+   * @param color_code Farbe des Steins (als Hex-code)
+   * @param x x-Koordinate auf dem Spielbrett
+   * @param y z-Koordinate auf dem Spielbrett
+   * @returns {{color, name, location: {x, y}, type}}
+   */
   const pentoPieceToObj = (name, type, color_code, x, y) => {
     let color = pento_config.get_color_name(color_code)
     return {name, type, color, location: { x, y}}
   };
 
+  /**
+   * Dies hier wird getriggert, wenn es eine Änderung im Spielstatus gab
+   */
   useEffect(() => {
+
+    // Sorgt für den richtigen Status wenn das Spiel beginnt
     if (gameState.game.status === 'ongoing') {
       console.log('Game status changed to ongoing');
       initialShapes.forEach(el => {
         const newPiece = pentoPieceToObj(el.name, el.type, el.color, el.x, el.y);
         dispatch({type: 'addToLeftBoard', piece: newPiece});
       });
-
       gameTimeHandler.current = setInterval(() => {
         dispatch({type: 'refreshTime'});
-        sendDataToFurhat()
       }, 500)
     }
+
+    // Setzt den Alert für ein gewonnenes / verlorenes Spiel
     if (['lost', 'won'].includes(gameState.game.status)){
       alert(`You ${gameState.game.status} the game!`);
       if (gameTimeHandler.current){
@@ -217,12 +253,43 @@ const App = () => {
     }
   }, [gameState.game.status]);
 
+  /**
+   * Dies wird getriggert, wenn es eine Änderung im Spielstatus oder der Liste mit Steinen auf dem linken Board gibt
+   */
   useEffect(() => {
+
+    // Wenn es keine Steine mehr auf dem linken Board gibt und das Spiel noch läuft, haben wir gewonnen
     if (gameState.game.status === 'ongoing' && initialShapes?.length === 0) {
       dispatch({type: 'gameWon'})
     }
+
+    if (gameState.game.status === 'ongoing' && !eventsInitialized) {
+      // Wir subscriben zu dem Event, das vom Roboter gesendet werden kann, um einen Spielstein auszuwählen
+      window.furhat.subscribe('selectPiece', function (params) {
+        selectPentoPiece(params.piece)
+      });
+
+      // Wir subscriben zu dem Event, das vom Roboter gesendet werden kann, um die aktuelle Auswahl an Spielsteinen
+      // zu löschen
+      window.furhat.subscribe('deselectPiece', function () {
+        deselect()
+      });
+
+      // Wir subscriben zu dem Event, das vom Roboter gesendet werden kann, um den aktuell ausgewählten Spielstein
+      // auf dem rechten Board zu plazieren
+      window.furhat.subscribe('startPlacing', function () {
+        placeSelected()
+      })
+
+      // Sorgt dafür, dass wir nur einmal zu den Furhat-Events subscriben
+      setEventsInitialized(true);
+    }
+
   }, [initialShapes, gameState.game.status]);
 
+  /**
+   * Hier werden Änderungen im aktuell ausgewählten Spielstein an die richtigen Stellen kommuniziert.
+   */
   useEffect(() => {
     if (activeShape && activeShape.length > 0) {
       dispatch({type: 'selectPiece', piece: activeShape[0]});
@@ -232,8 +299,19 @@ const App = () => {
     }
   }, [activeShape]);
 
+  /**
+   * Bei jedem Update in der Spielzeit (also einmal die Sekunde) wird der aktuelle Spielstand and Furhat gesendet
+   */
   useEffect(() => {
+    sendDataToFurhat()
+  }, [gameState.game.time]);
 
+
+  /**
+   * Wenn die Web-UI initialisiert wird, verbinden wir uns mit dem Roboter.
+   * Initial hören wir nur auf "startGame" events.
+   */
+  useEffect(() => {
     Furhat(function (furhat) {
 
       window.furhat = furhat
@@ -241,25 +319,13 @@ const App = () => {
       furhat.subscribe('startGame', function () {
         startGame()
       });
-
-      // We subscribe to the event to select a piece. We need to send the name of the shape as a parameter
-      furhat.subscribe('selectPiece', function (shape_name) {
-        selectPentoPiece(shape_name)
-      });
-
-      // We subscribe to the event to clear the selection of the current piece
-      furhat.subscribe('deselectPiece', function () {
-        deselect()
-      });
-
-      // We subscribe to the event to place the current piece on the right game board
-      furhat.subscribe('startPlacing', function () {
-        placeSelected()
-      })
     })
 
   }, [])
 
+  /**
+   * Hilfs-methode zum Initialisieren der Verbindung mit Furhat
+   */
   const initializationMonitor = () => {
 
     if(!window.furhat) {
@@ -267,73 +333,82 @@ const App = () => {
     }
     else {
       setInitialized(true)
-      console.log("Furhat initialized")
+      console.log("Initialization successful")
     }
 
   }
 
+  /**
+   * Hilfs-methode zum Initialisieren der Verbindung mit Furhat
+   */
   useEffect(() => {
     initializationMonitor()
   }, [])
 
+  /**
+   * Hilfsmethode, die Daten an den Roboter sendet
+   */
   const sendDataToFurhat = () => {
     if(window.furhat) {
       window.furhat.send({
         event_name: "GameStateUpdate",
-        data: gameState.JSON()
+        data: JSON.stringify(gameState)
       })
     }
-  };
+  }
 
 
+  /**
+   * Hier werden die einzelnen Komponenten in der Web-UI angezeigt
+   */
   return (
-    <div className="App">
-      <div className="twelve columns">
-        <h5>Pentomino Game</h5>
-      </div>
-      <div className="row">
-        <div className="six columns">
-          <button id="startBtn" style={{ marginRight: 50 }} onClick={() => startGame()}>Start new game</button>
-          <button id="placeBtn" style={{ marginRight: 50 }} onClick={() => placeSelected()}>Place selected</button>
-          <button id="placeBtn" onClick={() => deselect()}>Deselected Piece</button>
+      <div className="App">
+        <div className="twelve columns">
+          <h5>Pentomino Game</h5>
         </div>
-        <div className="six columns">
-          <div style={{ color: "#555", fontSize: "16px" }}>Game State: {gameState.game.status}</div>
-          <div style={{ color: "#555", fontSize: "16px" }}>Remaining Game Time: {gameState.game.time}</div>
+        <div className="row">
+          <div className="six columns">
+            <button id="startBtn" style={{ marginRight: 50 }} onClick={() => startGame()}>Start new game</button>
+            <button id="placeBtn" style={{ marginRight: 50 }} onClick={() => placeSelected()}>Place selected</button>
+            <button id="placeBtn" onClick={() => deselect()}>Deselected Piece</button>
+          </div>
+          <div className="six columns">
+            <div style={{ color: "#555", fontSize: "16px" }}>Game State: {gameState.game.status}</div>
+            <div style={{ color: "#555", fontSize: "16px" }}>Remaining Game Time: {gameState.game.time}</div>
+          </div>
+        </div>
+        <hr />
+        <div className="row">
+          <div className="six columns">
+            <PentoBoard shapes={initialShapes}
+                        activeShape={activeShape[0]}
+                        grid_properties={{
+                          "title": "Initial",
+                          "with_grid": true,
+                          "with_tray": true,
+                          "x": grid_x,
+                          "y": grid_y
+                        }}
+                        config={{ "n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
+            />
+          </div>
+          <div className="six columns">
+            <PentoBoard shapes={placedShapes}
+                        grid_properties={{
+                          "title": "Elephant",
+                          "with_grid": true,
+                          "with_tray": true,
+                          "x": grid_x,
+                          "y": grid_y
+                        }}
+                        config={{ "n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
+            />
+          </div>
+        </div>
+        <div>
+          {renderButtons()}
         </div>
       </div>
-      <hr />
-      <div className="row">
-        <div className="six columns">
-          <PentoBoard shapes={initialShapes}
-                      activeShape={activeShape[0]}
-                      grid_properties={{
-                        "title": "Initial",
-                        "with_grid": true,
-                        "with_tray": true,
-                        "x": grid_x,
-                        "y": grid_y
-                      }}
-                      config={{ "n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
-          />
-        </div>
-        <div className="six columns">
-          <PentoBoard shapes={placedShapes}
-                      grid_properties={{
-                        "title": "Elephant",
-                        "with_grid": true,
-                        "with_tray": true,
-                        "x": grid_x,
-                        "y": grid_y
-                      }}
-                      config={{ "n_blocks": n_blocks, "board_size": board_size, "block_size": block_size }}
-          />
-        </div>
-      </div>
-      <div>
-        {renderButtons()}
-      </div>
-    </div>
   );
 };
 
