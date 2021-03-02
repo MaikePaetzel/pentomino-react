@@ -7,6 +7,7 @@ import { pento_I } from "./pento-objects/HelperPentoShapes";
 import { PentoBoard } from "./pento-objects/PentoBoard";
 import { PentoConfig } from "./config";
 import { createNewPentoPieceInShape, generateElephantShape } from "./pento-objects/HelperDrawComplexShapes";
+import Furhat from 'furhat-gui'
 
 
 const App = () => {
@@ -19,7 +20,7 @@ const App = () => {
   const grid_x = 0;
   const grid_y = 0;
 
-  const game_time = 30
+  const game_time = 600;
 
   const grid_config = {
     "n_blocks": n_blocks,
@@ -48,6 +49,9 @@ const App = () => {
 
   const [activeShape, setActiveShape] = useState([]);
 
+  const [initialized, setInitialized] = useState(false)
+
+
   const [gameState, dispatch] = useReducer((state, action) => {
     switch (action.type) {
       case 'gameStart':
@@ -58,12 +62,35 @@ const App = () => {
             status: 'ongoing',
             startTime: new Date().getTime()
           }
-        }
+        };
+      case 'selectPiece': {
+        return {
+          ...state,
+          selected: action.piece.name
+        };
+      };
+      case 'deselectPiece': {
+        return {
+          ...state,
+          selected: ""
+        };
+      }
       case 'addToRightBoard':
         return {
           ...state,
           right_board: [...state.right_board, action.piece]
-        }
+        };
+      case 'addToLeftBoard':
+        return {
+          ...state,
+          left_board: [...state.left_board, action.piece]
+        };
+      case 'removeFromLeftBoard':
+        let filtered_list = state.left_board.filter(item => item.name !== action.piece.name)
+        return {
+          ...state,
+          left_board: filtered_list
+        };
       case 'gameWon':
         return {
           ...state,
@@ -72,10 +99,10 @@ const App = () => {
             status: 'won',
             startTime: new Date().getTime()
           }
-        }
+        };
       case 'refreshTime':
 
-        const currentTime = new Date().getTime()
+        const currentTime = new Date().getTime();
         const newDiff = game_time - Math.floor((currentTime - state.game.startTime) / 1000.0);
         let newStatus = state.game.status;
         if (newDiff <= 0){
@@ -89,7 +116,7 @@ const App = () => {
             status: newStatus,
             time: newDiff
           }
-        }
+        };
 
       default:
         return state
@@ -134,7 +161,7 @@ const App = () => {
     setPlacedShapes([]);
     setActiveShape([]);
     setInitialShapes(generateElephantShape("elephant", pento_config, grid_config));
-    // TODO ins left board und rausfliegen wenn placed
+
     dispatch({type: 'gameStart'})
   };
 
@@ -154,8 +181,9 @@ const App = () => {
 
       let new_shape = createNewPentoPieceInShape("elephant", pento_config, grid_config, to_replace.type, to_replace.color, to_replace.id);
 
-      const newPiece = pentoPieceToObj(new_shape.name, new_shape.type, new_shape.color, new_shape.x, new_shape.y)
-      dispatch({type: 'addToRightBoard', piece: newPiece})
+      const newPiece = pentoPieceToObj(new_shape.name, new_shape.type, new_shape.color, new_shape.x, new_shape.y);
+      dispatch({type: 'addToRightBoard', piece: newPiece});
+      dispatch({type: 'removeFromLeftBoard', piece: to_replace});
 
       setPlacedShapes(placedShapes.concat(new_shape));
       setInitialShapes(initialShapes.filter(item => item.name !== to_replace.name));
@@ -163,31 +191,99 @@ const App = () => {
     }
   };
 
-  const pentoPieceToObj = (name, type, color, x, y) => {
-    // TODO - Color umwandeln
+  const pentoPieceToObj = (name, type, color_code, x, y) => {
+    let color = pento_config.get_color_name(color_code)
     return {name, type, color, location: { x, y}}
   };
 
   useEffect(() => {
     if (gameState.game.status === 'ongoing') {
-      console.log('Game status changed to ongoing')
+      console.log('Game status changed to ongoing');
+      initialShapes.forEach(el => {
+        const newPiece = pentoPieceToObj(el.name, el.type, el.color, el.x, el.y);
+        dispatch({type: 'addToLeftBoard', piece: newPiece});
+      });
+
       gameTimeHandler.current = setInterval(() => {
-        dispatch({type: 'refreshTime'})
+        dispatch({type: 'refreshTime'});
+        sendDataToFurhat()
       }, 500)
     }
     if (['lost', 'won'].includes(gameState.game.status)){
-      alert(`You ${gameState.game.status} the game!`)
+      alert(`You ${gameState.game.status} the game!`);
       if (gameTimeHandler.current){
         clearInterval(gameTimeHandler.current)
       }
     }
-  }, [gameState.game.status])
+  }, [gameState.game.status]);
 
   useEffect(() => {
     if (gameState.game.status === 'ongoing' && initialShapes?.length === 0) {
       dispatch({type: 'gameWon'})
     }
-  }, [initialShapes, gameState.game.status])
+  }, [initialShapes, gameState.game.status]);
+
+  useEffect(() => {
+    if (activeShape && activeShape.length > 0) {
+      dispatch({type: 'selectPiece', piece: activeShape[0]});
+    }
+    else {
+      dispatch({type: 'deselectPiece'})
+    }
+  }, [activeShape]);
+
+  useEffect(() => {
+
+    Furhat(function (furhat) {
+
+      window.furhat = furhat
+      // We subscribe to the event to start the game
+      furhat.subscribe('startGame', function () {
+        startGame()
+      });
+
+      // We subscribe to the event to select a piece. We need to send the name of the shape as a parameter
+      furhat.subscribe('selectPiece', function (shape_name) {
+        selectPentoPiece(shape_name)
+      });
+
+      // We subscribe to the event to clear the selection of the current piece
+      furhat.subscribe('deselectPiece', function () {
+        deselect()
+      });
+
+      // We subscribe to the event to place the current piece on the right game board
+      furhat.subscribe('startPlacing', function () {
+        placeSelected()
+      })
+    })
+
+  }, [])
+
+  const initializationMonitor = () => {
+
+    if(!window.furhat) {
+      setTimeout(initializationMonitor, 1000)
+    }
+    else {
+      setInitialized(true)
+      console.log("Furhat initialized")
+    }
+
+  }
+
+  useEffect(() => {
+    initializationMonitor()
+  }, [])
+
+  const sendDataToFurhat = () => {
+    if(window.furhat) {
+      window.furhat.send({
+        event_name: "GameStateUpdate",
+        data: gameState.JSON()
+      })
+    }
+  };
 
 
   return (
@@ -239,6 +335,6 @@ const App = () => {
       </div>
     </div>
   );
-}
+};
 
 export default App;
