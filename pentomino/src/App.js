@@ -106,10 +106,6 @@ const App = () => {
           left_board: filtered_list
         };
 
-      case 'move':
-        console.log('moving', action.dir);
-        return state;
-
       case 'pieceAtGoal':
         return {
           ...state,
@@ -155,9 +151,11 @@ const App = () => {
    */
   const renderButtons = () => {
     return initialShapes.concat(placedShapes).sort().map(element => {
-      return <button id={"pento_" + element.type} style={{ visibility: gameState.correctly_placed.find(shape => shape.name == element.name)?'hidden':'visible'}} onClick={() => {
-        selectPentoPiece(element.name)
-      }}> {pento_config.get_color_name(element.color)} {element.type} </button>
+      return <button id={"pento_" + element.type} 
+        style={{ visibility: gameState.correctly_placed.find(shape => shape.name == element.name)?'hidden':'visible'}} 
+        onClick={() => {
+          selectPentoPiece(element.name);
+        }}> {pento_config.get_color_name(element.color)} {element.type} </button>
     })
   };
 
@@ -168,6 +166,7 @@ const App = () => {
    * @param pento_name Der Name des Pentomino-Teils als String
    */
   const selectPentoPiece = (pento_name) => {
+    //todo: stop move here?
     if (activeShape.length > 0 && activeShape[0].name == pento_name) {
       deselect();
     } else {
@@ -198,18 +197,72 @@ const App = () => {
   }
 
   // Parameter und Variblen zur Bewegung des aktiven Spielsteins auf dem rechten Spielbrett
-  const MOVESPEED = 5;
-  const MOVEFREQ  = 200;
-  const moveId    = null;
-  
-  const moveUp = () => {
-    dispatch({type: 'move', dir: 'up'})
-  }
-  const moveDown = () => {}
-  const moveLeft = () => {}
-  const moveRight = () => {}
+  const [MOVESPEED, setMOVESPEED] = useState(5);
+  const [MOVEFREQ, setMOVEFREQ]  = useState(200);
+  const moveHandler    = useRef(null);
 
-  const stopMove = () => {}
+  /**
+  * Move the active shape on some PentoBoard by a delta x, y
+  * @param {PentoBoard reference} board
+  * @param {x distance} dx
+  * @param {y distance} dy
+  */
+  const moveActive = (dx, dy) => {
+    let active = activeShape[0];
+    // oder so?
+    // setActiveShape(placedShapes.map(shape => {
+    //     if (shape.name == active.name) {
+    //       shape.moveTo(shape.x+dx, shape.y+dy);
+    //     }
+    //     return shape;
+    //   }));
+    active.moveTo(active.x+dx, active.y+dy);
+    setActiveShape([active.copy(active.id)]);
+  }
+
+  /**
+   * Stop current interval and set an interval for moving the active shape
+   * on the document.board
+   * @param {one of [up, down, left, right]} dir
+   * @param {move frequency in milliseconds, default:500} interval
+   * @param {distance of each step in pixels, default: 5} step
+   */
+  const startMove = (dir, interval=MOVEFREQ, step=MOVESPEED) => {
+    stopMove();
+    if (activeOnRightBoard()) {
+      // setInterval wird genutzt, um die Funktion moveActive in regelmäßigen Abständen auszuführen
+      switch (dir) {
+        case 'up':
+          moveHandler.current = setInterval(moveActive, interval, 0, -step);
+          break;
+        case 'down':
+          moveHandler.current = setInterval(moveActive, interval, 0, step);
+          break;
+        case 'left':
+          moveHandler.current = setInterval(moveActive, interval, -step, 0);
+          break;
+        case 'right':
+          moveHandler.current = setInterval(moveActive, interval, step, 0);
+          break;
+        default:
+          console.log(`Unknown direction: ${dir} at startMove`);
+      }
+    } else {
+      console.log('No active shape');
+    }
+  }
+
+  /**
+  * Bewegung des aktiven Spielstein anhalten und den Stein auf einem Quadrat der Matrix 'einrasten' lassen
+  */
+  const stopMove = () =>  {
+    clearInterval(moveHandler.current);
+    if (activeOnRightBoard()) {
+      lockActiveOnGrid();
+      fixCorrectlyPlaced();
+    }
+  }
+  
 
   /**
   * Den aktiven Spielstein auf dem rechten Brett rotieren, um delta_angle Grad
@@ -230,12 +283,6 @@ const App = () => {
       console.log('No active shape');
     }
     dispatch({type: 'rotate', angle: delta_angle})
-    // if (this.elephant_board.pento_active_shape) {
-    //   this.elephant_board.rotate_shape(-90);
-    //   this.fixCorrectlyPlaced();
-    // } else {
-    //   console.log('No active shape');
-    // }
   }
   
   /**
@@ -258,9 +305,9 @@ const App = () => {
     }
   }
 
-    /**
-   * If the currently active shape is placed, rotated and flipped correctly on the elephant board,
-   * the corresponding button is hidden to stop any further changes by the user
+  /**
+   * Falls die aktuell aktive Shape korrekt platziert und ausgerichtet ist, wird dies im Gamestate vermerkt
+   * und der zugehörige Button versteckt, um weitere Änderungen zu verhindern.
    */
   const fixCorrectlyPlaced = () => {
     if (activeOnRightBoard() && isCorrectlyPlaced(activeShape[0])) {
@@ -269,23 +316,28 @@ const App = () => {
     }
   }
 
+  /**
+   * Testet, ob ein Spielstein an der richtigen Position in der richtigen Ausrichtung liegt.
+   * {zu testendes PentoShape object} shape
+   */
   const isCorrectlyPlaced = (shape) => {
-    // no flip applied
+    // Shape darf nicht gespiegelt sein
     if (shape.is_mirrored) { return false; }
     let goalCoords = configPerShape("elephant", grid_config.n_blocks);
     goalCoords = grid_cell_to_coordinates(goalCoords['x'] + goalCoords['coords'][shape.type]['x'],
                                           goalCoords['y'] + goalCoords['coords'][shape.type]['y']);
     if (shape.x != goalCoords[0] || shape.y != goalCoords[1]) { return false };
-    // goal rotation is 0. 'rotation attribute' of shape is not necessarily correct
-    // because of the flip action. Using a hack here: Check whether the block arrangement
-    // corresponds to that of a newly created shape of the same type
+    // Die Zielrotation ist 0. Das 'rotation'-Attribut eines Steins kann jedoch nicht einfach
+    // verwendet werden, da der Wert bei Verwendung einer Spiegelung ('flip') verfälscht
+    // werden kann. Hier wird eine etwas 'hacky' Lösung verwendet: Es wird eine neue Shape
+    // desselben Typs erstellt und die Blockanordnung abgeglichen.
     let dummy_shape = createNewPentoPieceInShape("dummy", grid_config, shape.type, "black", -1);
     let shape_grid = shape.get_internal_grid();
     let dummy_grid = dummy_shape.get_internal_grid();
     for (let row = 0; row < shape.get_grid_height(); row++) {
       for (let col = 0; col < shape.get_grid_width(); col++) {
         if (dummy_grid[row] == undefined ||
-          dummy_grid[row][col] == undefined || // grid sizes don't match (shouldn't happen)
+          dummy_grid[row][col] == undefined || // sollte nicht vorkommen: Größen der internen Matrizen ('grid') stimmen nicht überein
           dummy_grid[row][col] != shape_grid[row][col]) {
           return false;
         }
@@ -293,6 +345,28 @@ const App = () => {
     }
     return true;
   }
+
+  /**
+   * Einen auf dem rechten Spielbrett aktiven Spielstein auf einem Quadrat 'einrasten' lassen, sodass
+   * der Stein auf dem Feld bleibt und am Hintergrundgitter ausgerichtet ist.
+   */
+  const lockActiveOnGrid = () => {
+    if (activeOnRightBoard()) {
+      let active = activeShape[0];
+      // Sicherstellen, dass der Stein das Spielfeld nicht verlässt
+      let new_x = Math.max(active.x, grid_config.x + 2*grid_config.block_size);
+      new_x   = Math.min(new_x, grid_config.board_size - 2*grid_config.block_size);
+      let new_y = Math.max(active.y, grid_config.y + 2*grid_config.block_size);
+      new_y   = Math.min(new_y, grid_config.board_size - 2*grid_config.block_size);
+      // Stein auf einem Quadrat einrasten lassen
+      new_x = Math.floor((new_x - grid_config.x) / grid_config.block_size) * grid_config.block_size;
+      new_y = Math.floor((new_y - grid_config.y) / grid_config.block_size) * grid_config.block_size;
+      active.moveTo(new_x, new_y);
+      setActiveShape(active.copy(active.id));
+    } else {
+      console.log('No active shape');
+    }
+}
 
   /**
    * Diese Methode wird aufgerufen, um das Spiel zu starten (entweder durch Button-klick oder durch Event vom Roboter)
@@ -522,15 +596,15 @@ const App = () => {
             <button id="placeBtn" onClick={() => deselect()}>Deselect Piece</button>
             <hr/>
               <button id="leftBtn" onClick={() => rotateActive(-90)} style={{ fontSize: "15px" }}>{'\u21b6'}</button>
-              <button onClick={() => moveUp()} style={{margin: "5px"}}>{'\u25b2'}</button>
+              <button onClick={() => startMove('up')} style={{margin: "5px"}}>{'\u25b2'}</button>
               <button onClick={() => rotateActive(90)} style={{ fontSize: "15px" }}>{'\u21b7'}</button>
               <br/>
-              <button onClick={() => moveLeft()}>{'\u25c0'}</button>
+              <button onClick={() => startMove('left')}>{'\u25c0'}</button>
               <button onClick={() => stopMove()} style={{ fontSize: "20px", margin: "5px" }}>{'\u2613'}</button>
-              <button onClick={() => moveRight()}>{'\u25b6'}</button>
+              <button onClick={() => startMove('right')}>{'\u25b6'}</button>
               <br />
               <button onClick={() => flipActive('horizontal')} style={{ fontSize: "14px" }}>{'\u21c5'}</button>
-              <button onClick={() => moveDown()} style={{margin: "5px"}}>{'\u25bc'}</button>
+              <button onClick={() => startMove('down')} style={{margin: "5px"}}>{'\u25bc'}</button>
               <button onClick={() => flipActive('vertical')} style={{ fontSize: "14px" }}>{'\u21c6'}</button>
           </div>
           <div className="five columns">
