@@ -110,7 +110,7 @@ const App = () => {
         return {
           ...state,
           correctly_placed: [...state.correctly_placed, action.piece]
-        }
+        };
 
       case 'gameWon':
         return {
@@ -121,6 +121,17 @@ const App = () => {
             startTime: new Date().getTime()
           }
         };
+      case 'resetGame':
+        return {
+          "left_board": [],
+          "right_board": [],
+          "game": {
+            "status": "initial",
+            "startTime": undefined,
+            "time": game_time,
+          },
+          "selected": "None"
+        }
       case 'refreshTime':
 
         const currentTime = new Date().getTime();
@@ -217,8 +228,9 @@ const App = () => {
     //     return shape;
     //   }));
     active.moveTo(active.x+dx, active.y+dy);
-    setActiveShape([active.copy(active.id)]);
-  }
+    //TODO: Hier muss das dispatch noch rein, damit der gameState auch richtig geupdated wird
+    //setActiveShape([active.copy(active.id)]);
+  };
 
   /**
    * Stop current interval and set an interval for moving the active shape
@@ -373,6 +385,7 @@ const App = () => {
    */
   const startGame = () => {
     // Alle aktuellen Spielsteine auf dem rechten Board löschen
+    dispatch({type: "resetGame"});
     setPlacedShapes([]);
 
     // ALle aktuell ausgewählten Spielsteine löschen
