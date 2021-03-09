@@ -21,7 +21,7 @@ const App = () => {
   const grid_y = 0;
 
   // Diese Variable setzt, wie lang das Game im Webinterface dauert (in Sekunden)
-  const game_time = 10;
+  const game_time = 600;
 
   const grid_config = {
     "n_blocks": n_blocks,
@@ -139,6 +139,7 @@ const App = () => {
         return {
           "left_board": [],
           "right_board": [],
+          "correctly_placed": [],
           "game": {
             "status": "initial",
             "startTime": undefined,
