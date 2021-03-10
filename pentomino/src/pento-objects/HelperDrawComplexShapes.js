@@ -73,7 +73,6 @@ export const generateElephantShape = (shape, pento_config, grid_config) => {
 export const createNewPentoPieceInShape = (shape, grid_config, pento_piece, color, id) => {
     const shape_config = configPerShape(shape, grid_config.n_blocks)
 
-    // console.log("Pento Piece " + pento_piece);
     // place on elephant board (predefined position)
     let eleX = shape_config["x"] + shape_config["coords"][pento_piece]['x'];
     let eleY = shape_config["y"] + shape_config["coords"][pento_piece]['y'];
@@ -159,7 +158,7 @@ const generate_params = (rand_shape, action_type, grid_config) => {
     var max = grid_config.board_size;
     var min = 0;
     var rotations = [90, 180, 270];
-    var axis = ['horizontal', 'vertical'];
+    var axis = ['vertical']; // Only use one type of mirroring during generation / else ['horizontal', 'vertical'];
 
     switch (action_type) {
         case 'move':
@@ -170,8 +169,9 @@ const generate_params = (rand_shape, action_type, grid_config) => {
             let rand_angle = rotations[Math.floor(Math.random() * rotations.length)];
             return { 'rotation': rand_angle };
         case 'flip':
-            let rand_axis = axis[Math.floor(Math.random() * axis.length)];
-            return { 'axis': rand_axis };
+            return { 'axis': 'vertical' } // always flip vertically during generation for now
+            //let rand_axis = axis[Math.floor(Math.random() * axis.length)];
+            //return { 'axis': rand_axis };
         default:
             console.log('Not implemented: ' + action_type);
             return;

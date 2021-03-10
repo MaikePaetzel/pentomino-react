@@ -327,7 +327,7 @@ const App = () => {
     clearInterval(moveHandler.current);
     if (lock_and_fix_correct && activeOnRightBoard()) {
       lockActiveOnGrid();
-      fixCorrectlyPlaced(); // falls Stein korrekt liegt: fixieren
+      fixCorrectlyPlaced(activeShape[0]); // falls Stein korrekt liegt: fixieren
     }
   }
   
@@ -360,12 +360,13 @@ const App = () => {
   }
 
   /**
-   * Falls die aktuell aktive Shape korrekt platziert und ausgerichtet ist, wird dies im Gamestate vermerkt
+   * Falls die Shape korrekt platziert und ausgerichtet ist, wird dies im Gamestate vermerkt
    * und der zugehörige Button versteckt, um weitere Änderungen zu verhindern.
    */
-  const fixCorrectlyPlaced = () => {
-    if (activeOnRightBoard() && isCorrectlyPlaced(activeShape[0])) {
-      dispatch({type: 'pieceAtGoal', piece: activeShape[0]});
+  const fixCorrectlyPlaced = (shape_to_check) => {
+    if (placedShapes.find(s => s.name == shape_to_check.name) && // Stein muss rechts liegen ...
+      isCorrectlyPlaced(shape_to_check)) { // ... und an der richtigen Stelle auf dem Board sein
+      dispatch({type: 'pieceAtGoal', piece: shape_to_check});
       setActiveShape([]);
     }
   }
@@ -457,7 +458,10 @@ const App = () => {
 
       // Kopie des aktiven Stein erstellen, mit anderer Position, aber gleicher Rotation und Spiegelung
       let new_shape = createNewPentoPieceInShape("upper_left_corner", grid_config, to_replace.type, to_replace.color, to_replace.id);
-
+      // wie beim Generieren: erst rotieren, dann spiegeln
+      if (to_replace.rotation != 0) { new_shape.rotate(to_replace.rotation); }
+      // _is_mirrored speichert, ob geflipped wurde, is_mirrored gibt für symmetrische Shapes immer false zurück
+      if (to_replace._is_mirrored) { new_shape.flip('vertical'); }
 
       const newPiece = pentoPieceToObj(new_shape.name, new_shape.type, new_shape.color, new_shape.x, new_shape.y);
       dispatch({type: 'addToRightBoard', piece: newPiece});
@@ -521,10 +525,10 @@ const App = () => {
    * Dies wird getriggert, wenn es eine Änderung im Spielstatus oder der Liste mit Steinen auf dem linken Board gibt
    */
   useEffect(() => {
-
-    // Wenn es keine Steine mehr auf dem linken Board gibt und das Spiel noch läuft, haben wir gewonnen
-    if (gameState.game.status === 'ongoing' && initialShapes?.length === 0) {
-      dispatch({type: 'gameWon'})
+    // Wenn auf beiden Boards keine Steine mehr verfügbar sind (alle korrekt plaziert sind)
+    // und das Spiel noch läuft, haben wir gewonnen
+    if (gameState.game.status === 'ongoing' && gameState.correctly_placed?.length === 12) {
+      dispatch({type: 'gameWon'});
     }
 
     if (gameState.game.status === 'ongoing' && !eventsInitialized && window.furhat) {
@@ -549,7 +553,7 @@ const App = () => {
       setEventsInitialized(true);
     }
 
-  }, [initialShapes, gameState.game.status]);
+  }, [gameState.correctly_placed, gameState.game.status]);
 
   /**
    * Hier werden Änderungen im aktuell ausgewählten Spielstein an die richtigen Stellen kommuniziert.
